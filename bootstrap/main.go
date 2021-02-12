@@ -10,9 +10,11 @@ import (
 	host "github.com/libp2p/go-libp2p-core/host"
 	net "github.com/libp2p/go-libp2p-core/network"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-	routing "github.com/libp2p/go-libp2p-routing"
+
+	// routing "github.com/libp2p/go-libp2p-routing"
 	tcp "github.com/libp2p/go-tcp-transport"
 	log "github.com/sirupsen/logrus"
+	ma "github.com/multiformats/go-multiaddr"
 )
 
 type ServiceNode struct {
@@ -21,7 +23,20 @@ type ServiceNode struct {
 	Stop chan bool
 }
 
-func (node *ServiceNode) Listen(net.Stream, net.Conn) {}
+type netNotifiee struct{}
+
+func (nn *netNotifiee) Connected(n net.Network, c net.Conn) {
+	log.Info("Connected to: %s/p2p/%s\n", c.RemoteMultiaddr(), c.RemotePeer().Pretty())
+}
+
+func (nn *netNotifiee) Disconnected(n net.Network, v net.Conn)   {}
+func (nn *netNotifiee) OpenedStream(n net.Network, v net.Stream) {}
+func (nn *netNotifiee) ClosedStream(n net.Network, v net.Stream) {}
+func (nn *netNotifiee) Listen(n net.Network, a ma.Multiaddr)      {}
+func (nn *netNotifiee) ListenClose(n net.Network, a ma.Multiaddr) {}
+
+func StreamHandler(s net.Stream) {
+}
 
 func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
 	var r io.Reader
@@ -42,13 +57,14 @@ func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
 		ctx,
 		transport,
 		listenAddr,
-		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-			d, err := dht.New(context.Background(), h)
-			return d, err
-		}),
 		libp2p.Identity(privKey),
 		libp2p.DefaultSecurity,
 	)
+	if err != nil {
+		return nil, nil, err
+	}
+	h.SetStreamHandler("/chat/1.0.0", StreamHandler)
+	d, err = dht.New(ctx, h)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -70,6 +86,7 @@ func main() {
 	if err != nil {
 		log.Error("Error creating host")
 	}
+	basicHost.Network().Notify(&netNotifiee{})
 	node := CreateNode(&basicHost, kahdemlia)
 	log.Info("Host created")
 	log.Info("We are: ", basicHost.ID(), basicHost.Addrs())
