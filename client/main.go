@@ -6,7 +6,7 @@ import (
 	"io"
 	"sync"
 
-	cid "github.com/ipfs/go-cid"
+	// cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -15,8 +15,9 @@ import (
 	// routing "github.com/libp2p/go-libp2p-routing"
 	"github.com/libp2p/go-tcp-transport"
 	ma "github.com/multiformats/go-multiaddr"
-	mh "github.com/multiformats/go-multihash"
+	// mh "github.com/multiformats/go-multihash"
 	log "github.com/sirupsen/logrus"
+	discovery "github.com/libp2p/go-libp2p-discovery"
 )
 
 type Node struct {
@@ -64,6 +65,10 @@ func CreateNode(h *host.Host, d *dht.IpfsDHT) Node {
 }
 
 func (node *Node) ConnectToServiceNode(ctx context.Context, list []string) error {
+
+	if err := node.DHT.Bootstrap(ctx); err != nil {
+		log.Warn("Failed to bootstrap ", err)
+	}
 	var wg sync.WaitGroup
 	for _, peerStr := range list {
 		in := ma.StringCast(peerStr)
@@ -86,28 +91,15 @@ func (node *Node) ConnectToServiceNode(ctx context.Context, list []string) error
 }
 
 func (node *Node) SetupDescovery(ctx context.Context, rendezvous string) error {
-	log.Info("Announcing")
-	v1b := cid.V1Builder{Codec: cid.Raw, MhType: mh.SHA2_256}
-	rendezvousPoint, err := v1b.Sum([]byte(rendezvous))
+	routingDiscovery := discovery.NewRoutingDiscovery(node.DHT)
+	discovery.Advertise(ctx, routingDiscovery, "randezvous")
+	log.Info("Announced")
+
+	peerList, err := routingDiscovery.FindPeers(ctx, "rendezvous")
 	if err != nil {
 		return err
 	}
-	err = node.DHT.Provide(ctx, rendezvousPoint, true)
-	if err != nil {
-		return err
-	}
-
-	if err = node.DHT.Bootstrap(ctx); err != nil {
-		log.Warn("Failed to bootstrap ", err)
-	}
-
-	log.Info("Announcement complete")
-	log.Info("Searching peers")
-	pis, err := node.DHT.FindProviders(ctx, rendezvousPoint)
-	if err != nil {
-		log.Warn("No peer found")
-	}
-	log.Info("FOUND", len(pis))
+	log.Info("FOUND ", len(peerList))
 	return nil
 }
 
@@ -122,7 +114,7 @@ func main() {
 	log.Info("Host created We Are: ", (*node.Host).ID())
 	log.Info("Addrs: ", (*node.Host).Addrs())
 
-	err = node.ConnectToServiceNode(ctx, []string{"/ip4/192.168.0.108/tcp/4000/p2p/QmPSnf4n8tKqNVMowkTL9fQnsmRAeEbFopMvpWkuKHmQVm"})
+	err = node.ConnectToServiceNode(ctx, []string{"/ip4/127.0.0.1/tcp/4000/p2p/QmW6URxj72bRK3oMSamFLCtG8mpzJtjXgm7FxCW2SKFRnA"})
 	if err != nil {
 		log.Error("Error in connecting to service node", err)
 	}
