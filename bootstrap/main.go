@@ -2,17 +2,13 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"io"
-
+	
 	"github.com/libp2p/go-libp2p"
-	crypto "github.com/libp2p/go-libp2p-core/crypto"
 	host "github.com/libp2p/go-libp2p-core/host"
 	net "github.com/libp2p/go-libp2p-core/network"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 
 	// routing "github.com/libp2p/go-libp2p-routing"
-	tcp "github.com/libp2p/go-tcp-transport"
 	log "github.com/sirupsen/logrus"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -39,26 +35,11 @@ func StreamHandler(s net.Stream) {
 }
 
 func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
-	var r io.Reader
-	r = rand.Reader
 	var d *dht.IpfsDHT
-	privKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
-	if err != nil {
-		return nil, nil, err
-	}
-	transport := libp2p.ChainOptions(
-		libp2p.Transport(tcp.NewTCPTransport),
-	)
-	listenAddr := libp2p.ListenAddrStrings(
-		"/ip4/0.0.0.0/tcp/4000",
-	)
-
+	sourceMultiAddr, _ := ma.NewMultiaddr("/ip4/0.0.0.0/tcp/4000")
 	h, err := libp2p.New(
 		ctx,
-		transport,
-		listenAddr,
-		libp2p.Identity(privKey),
-		libp2p.DefaultSecurity,
+		libp2p.ListenAddrs(sourceMultiAddr),
 	)
 	if err != nil {
 		return nil, nil, err
