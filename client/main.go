@@ -2,25 +2,28 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
-	"io"
-	"sync"
+	// "crypto/rand"
+	// "io"
 	"bufio"
+	"sync"
 
 	cid "github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
+
+	// "github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	peer "github.com/libp2p/go-libp2p-peer"
 	peerstore "github.com/libp2p/go-libp2p-peerstore"
-	"github.com/libp2p/go-tcp-transport"
-	ma "github.com/multiformats/go-multiaddr"
+
+	// "github.com/libp2p/go-tcp-transport"
 	net "github.com/libp2p/go-libp2p-core/network"
+	ma "github.com/multiformats/go-multiaddr"
 	mh "github.com/multiformats/go-multihash"
+
 	// discovery "github.com/libp2p/go-libp2p-discovery"
-	log "github.com/sirupsen/logrus"
 	"github.com/libp2p/go-libp2p-core/protocol"
+	log "github.com/sirupsen/logrus"
 )
 
 type Node struct {
@@ -45,29 +48,30 @@ const (
 )
 
 func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
-	var r io.Reader
-	r = rand.Reader
+	// var r io.Reader
+	// r = rand.Reader
 
-	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
-	if err != nil {
-		return nil, nil, err
-	}
-	transport := libp2p.ChainOptions(
-		libp2p.Transport(tcp.NewTCPTransport),
-	)
-	listener := libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	// priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
+	// transport := libp2p.ChainOptions(
+	// 	libp2p.Transport(tcp.NewTCPTransport),
+	// )
+	// listener := libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
 	h, err := libp2p.New(
 		ctx,
-		transport,
-		listener,
+		// transport,
+		// listener,
 		libp2p.DefaultSecurity,
-		libp2p.Identity(priv),
+		// libp2p.Identity(priv),
 	)
 	if err != nil {
 		return nil, nil, err
 	}
 	h.SetStreamHandler(protocol.ID("/chat/1.0.0"), StreamHandler)
-	idht, err := dht.New(ctx, h)
+	var mode dht.ModeOpt = 2
+	idht, err := dht.New(ctx, h, dht.Mode(mode))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -131,10 +135,22 @@ func (node *Node) SetupDescovery(ctx context.Context, rendezvous string) error {
 
 	pis, err := node.DHT.FindProviders(ctx, rendezvousPoint)
 	if err != nil {
-		return err
+		log.Warn(err)
 	}
 	log.Info("FOUND ", len(pis))
+	// log.Info("Announcing ourselves...")
+	// routingDiscovery := discovery.NewRoutingDiscovery(node.DHT)
+	// discovery.Advertise(ctx, routingDiscovery, rendezvous)
+	// log.Debug("Successfully announced!")
 
+	// // Now, look for others who have announced
+	// // This is like your friend telling you the location to meet you.
+	// log.Debug("Searching for other peers...")
+	// peerChan, err := routingDiscovery.FindPeers(ctx, rendezvous)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// log.Info(len(peerChan))
 	return nil
 }
 
@@ -145,12 +161,15 @@ func main() {
 	if err != nil {
 		log.Error("Error creating host ", err)
 	}
+	
 	node := CreateNode(&h, d)
 	log.Info("Node: ", (*node.Host).ID())
 	log.Info("Addrs: ", (*node.Host).Addrs())
-
+	if err = d.Bootstrap(ctx); err != nil {
+		log.Error("Error in bootstraping node", err)
+	}
 	err = node.ConnectToServiceNode(ctx,
-		[]string{"/ip4/192.168.0.108/tcp/4000/p2p/QmUhQkZ83VENW14o5SvkHfddKnVD2znbnrU4ezxQ2VpDdS"},
+		[]string{"/ip4/127.0.0.1/tcp/4000/p2p/QmcHDQCD72jMiUGiEn8TkY1jZ4WRzRn4a7z4PJrhwXDrY7"},
 	)
 	if err != nil {
 		log.Error("Error in connecting to service node", err)

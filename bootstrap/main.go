@@ -7,7 +7,6 @@ import (
 	host "github.com/libp2p/go-libp2p-core/host"
 	net "github.com/libp2p/go-libp2p-core/network"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
-
 	// routing "github.com/libp2p/go-libp2p-routing"
 	log "github.com/sirupsen/logrus"
 	ma "github.com/multiformats/go-multiaddr"
@@ -40,12 +39,14 @@ func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
 	h, err := libp2p.New(
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
+		libp2p.DefaultSecurity,
 	)
 	if err != nil {
 		return nil, nil, err
 	}
+	var mode dht.ModeOpt = 2
 	h.SetStreamHandler("/chat/1.0.0", StreamHandler)
-	d, err = dht.New(ctx, h)
+	d, err = dht.New(ctx, h, dht.Mode(mode))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -67,9 +68,11 @@ func main() {
 	if err != nil {
 		log.Error("Error creating host")
 	}
+	
 	basicHost.Network().Notify(&netNotifiee{})
 	node := CreateNode(&basicHost, kahdemlia)
 	log.Info("Host created")
 	log.Info("We are: ", basicHost.ID(), basicHost.Addrs())
+	log.Info("DHT MODE: ", node.DHT.Mode())
 	<-node.Stop
 }
