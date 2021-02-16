@@ -5,8 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
-	// "strings"
+	"strings"
 
 	ggio "github.com/gogo/protobuf/io"
 	cid "github.com/ipfs/go-cid"
