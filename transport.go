@@ -154,12 +154,12 @@ func (node *Node) findPeerInfo(p peer.ID) ([]byte, error) {
 	}
 	piPublic := peerstore.PeerInfo{}
 	for _, addr := range pi.Addrs {
-		// if strings.Contains(addr.String(), "127.") ||
-		// 	strings.Contains(addr.String(), "192.") ||
-		// 	strings.Contains(addr.String(), "10.") ||
-		// 	strings.Contains(addr.String(), "p2p-circuit") {
-		// 	continue
-		// }
+		if strings.Contains(addr.String(), "127.") ||
+			strings.Contains(addr.String(), "192.") ||
+			strings.Contains(addr.String(), "10.") ||
+			strings.Contains(addr.String(), "p2p-circuit") {
+			continue
+		}
 
 		piPublic.Addrs = append(piPublic.Addrs, addr)
 	}
