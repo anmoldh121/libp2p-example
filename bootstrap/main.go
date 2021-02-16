@@ -10,13 +10,8 @@ import (
 	// routing "github.com/libp2p/go-libp2p-routing"
 	log "github.com/sirupsen/logrus"
 	ma "github.com/multiformats/go-multiaddr"
+	ntraversal "github.com/libp2p-tutorial"
 )
-
-type ServiceNode struct {
-	Host *host.Host
-	DHT  *dht.IpfsDHT
-	Stop chan bool
-}
 
 type netNotifiee struct{}
 
@@ -30,9 +25,6 @@ func (nn *netNotifiee) ClosedStream(n net.Network, v net.Stream) {}
 func (nn *netNotifiee) Listen(n net.Network, a ma.Multiaddr)      {}
 func (nn *netNotifiee) ListenClose(n net.Network, a ma.Multiaddr) {}
 
-func StreamHandler(s net.Stream) {
-}
-
 func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
 	var d *dht.IpfsDHT
 	sourceMultiAddr, _ := ma.NewMultiaddr("/ip4/0.0.0.0/tcp/4000")
@@ -45,20 +37,11 @@ func createHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
 		return nil, nil, err
 	}
 	var mode dht.ModeOpt = 2
-	h.SetStreamHandler("/chat/1.0.0", StreamHandler)
 	d, err = dht.New(ctx, h, dht.Mode(mode))
 	if err != nil {
 		return nil, nil, err
 	}
 	return h, d, nil
-}
-
-func CreateNode(h *host.Host, d *dht.IpfsDHT) ServiceNode {
-	return ServiceNode{
-		Host: h,
-		DHT:  d,
-		Stop: make(chan bool),
-	}
 }
 
 func main() {
@@ -70,7 +53,7 @@ func main() {
 	}
 	
 	basicHost.Network().Notify(&netNotifiee{})
-	node := CreateNode(&basicHost, kahdemlia)
+	node := ntraversal.CreateNode(&basicHost, kahdemlia)
 	log.Info("Host created")
 	log.Info("We are: ", basicHost.ID(), basicHost.Addrs())
 	log.Info("DHT MODE: ", node.DHT.Mode())

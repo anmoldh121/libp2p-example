@@ -1,0 +1,22 @@
+syntax="proto3";
+
+package proto;
+
+message Message {
+    enum Type {
+        CONNECTION_REQUEST = 0;
+        HOLE_PUNCH_REQUEST = 1;
+    }
+
+    message PeerID {
+        bytes id = 1;
+    }
+
+    message PeerInfo {
+        bytes info = 1;
+    }
+
+    Type type = 1;
+    PeerID peerID = 2;
+    PeerInfo peerInfo = 3;
+}
