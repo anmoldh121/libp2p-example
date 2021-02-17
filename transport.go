@@ -21,6 +21,7 @@ import (
 	ma "github.com/multiformats/go-multiaddr"
 	mh "github.com/multiformats/go-multihash"
 	log "github.com/sirupsen/logrus"
+	tcp "github.com/libp2p/go-tcp-transport"
 )
 
 type PackageWPeer struct {
@@ -39,10 +40,12 @@ type Node struct {
 }
 
 func CreateHost(ctx context.Context) (host.Host, *dht.IpfsDHT, error) {
+	transport := libp2p.Transport(tcp.NewTCPTransport)
+	addr := libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
 	h, err := libp2p.New(
 		ctx,
-		// transport,
-		// listener,
+		transport,
+		addr,
 		libp2p.DefaultSecurity,
 		// libp2p.Identity(priv),
 	)

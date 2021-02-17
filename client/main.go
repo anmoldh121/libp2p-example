@@ -26,7 +26,7 @@ func main() {
 		log.Error("Error in bootstraping node", err)
 	}
 	err = node.ConnectToServiceNode(ctx,
-		[]string{"/ip4/13.59.233.151/tcp/4000/p2p/QmTL8yjnpg9fHZMFDxW1QDrS61f7wyy2wPxm6E6MnRPxyF"},
+		[]string{"/ip4/13.59.233.151/tcp/4000/p2p/QmZiTVZ6ZMSh4TGekTdygugabpaUfH2Q8hA9jhfZqh6d4w"},
 	)
 	if err != nil {
 		log.Error("Error in connecting to service node", err)
